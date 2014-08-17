@@ -1,8 +1,10 @@
 ---
-title: "RR Project #1:  Analysis of Activity Monitoring Data"
-author: G. Bruce
+title: 'RR Project #1:  Analysis of Activity Monitoring Data'
+author: "G. Bruce"
 date: "Saturday, August 16, 2014"
-output: html_document
+output:
+  html_document:
+    fig_caption: yes
 ---
 
 This analysis uses activity monitoring data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
