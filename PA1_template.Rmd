@@ -22,7 +22,7 @@ actdata<-read.csv("activity.csv")  #read csv file
 ```
 
 Create a histogram of steps per day with bins at intervals of 1000, excluding days with zero steps:
-```{r}
+```{r Figure1}
 byday<-aggregate(.~date,data=actdata, sum) #aggregate activity data by date and sum other columns by day
 byday$interval<-NULL #remove sum of intervals column which is meaningless
 
@@ -42,7 +42,7 @@ median(byday$steps)
 ```
 
 Plot the mean steps per 5-minute interval as a time series: 
-```{r}
+```{r Figure2}
 byInt<-actdata$interval #Aggregate by interval and calculate the mean steps per interval excluding NA values
 intmean<-aggregate(x=actdata[,1],by=list(byInt),FUN="mean",na.rm=TRUE)
 colnames(intmean)<-c("interval","mean_steps")
@@ -74,7 +74,7 @@ newdata$steps[is.na(newdata$steps)]<- intmean$mean_steps[match(newdata$interval,
 ```
 
 Create a histogram of steps with bins of intervals of 1000, using the dataset with NAs replaced by means for that interval:
-```{r}
+```{r Figure3}
 #Aggregate activity data by date and sum other columns by day
 bydaynona<-aggregate(.~date,data=newdata, sum) #sum 
 bydaynona$interval<-NULL #remove sum of intervals column which is meaningless
@@ -108,7 +108,7 @@ intdaymean<-aggregate(x=newdata[,1],by=list(newdata$daytype,newdata$interval),FU
 colnames(intdaymean)<-c("daytype","interval","mean_steps")
 ```
 Plot the mean steps per 5-minute interval across all days, faceted by day type:
-```{r}
+```{r Figure4}
 ggplot(intdaymean, aes(x=interval, y=mean_steps)) +
         facet_wrap(~daytype, ncol=1)+
         geom_line() + 
