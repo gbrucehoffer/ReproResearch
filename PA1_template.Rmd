@@ -1,0 +1,117 @@
+---
+title: "RR Project #1:  Analysis of Activity Monitoring Data"
+author: G. Bruce
+date: "Saturday, August 16, 2014"
+output: html_document
+---
+
+This analysis uses activity monitoring data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+```{r,echo=FALSE, message=FALSE}
+library(ggplot2)
+library(plyr)
+library(Hmisc)
+setwd("C:/Users/Gretchen/Coursera/ReproR")
+```
+
+Download activity data file:
+```{r}
+actdata<-read.csv("activity.csv")  #read csv file
+```
+
+Create a histogram of steps per day with bins at intervals of 1000, excluding days with zero steps:
+```{r}
+byday<-aggregate(.~date,data=actdata, sum) #aggregate activity data by date and sum other columns by day
+byday$interval<-NULL #remove sum of intervals column which is meaningless
+
+bins=seq(0,25000,by=1000)
+hist(byday$steps,
+     breaks=bins,
+     col="lightblue",
+     xlab="Total Steps Taken Each Day",
+     ylab="Count of Days",
+     main="Histogram of Subject's Steps per Day from Oct. 1- Nov. 30, 2012\n(excluding Days with Zero Steps)")
+```
+
+Calculate the mean and median number of steps per day, using the dataset with NAs excluded:
+```{r}
+colMeans(subset(byday,select=c(steps), na.rm = TRUE))
+median(byday$steps)
+```
+
+Plot the mean steps per 5-minute interval as a time series: 
+```{r}
+byInt<-actdata$interval #Aggregate by interval and calculate the mean steps per interval excluding NA values
+intmean<-aggregate(x=actdata[,1],by=list(byInt),FUN="mean",na.rm=TRUE)
+colnames(intmean)<-c("interval","mean_steps")
+
+plot(intmean$interval, intmean$mean_steps,
+     type="n",
+     main="Mean Steps per 5-Minute Interval Across All Days",
+     xlab="5-Minute Interval",
+     ylab="Mean Steps")
+
+lines(intmean$interval, intmean$mean_steps)
+minor.tick(nx=20)
+```
+Identify the 5-minute interval with the highest mean number of steps:
+```{r}
+order.int<-order(intmean$mean_steps)
+ordered<-intmean$interval[order.int]
+ordered[length(ordered)]
+```
+Count the number of NAs for each column in the dataset:
+```{r}
+colSums(is.na(actdata))
+```
+
+Impute missing data by replace any NAs with the mean value for that time interval:
+```{r, warning=FALSE}
+newdata<-actdata
+newdata$steps[is.na(newdata$steps)]<- intmean$mean_steps[match(newdata$interval, intmean$interval)]
+```
+
+Create a histogram of steps with bins of intervals of 1000, using the dataset with NAs replaced by means for that interval:
+```{r}
+#Aggregate activity data by date and sum other columns by day
+bydaynona<-aggregate(.~date,data=newdata, sum) #sum 
+bydaynona$interval<-NULL #remove sum of intervals column which is meaningless
+
+bins=seq(0,25000,by=1000)
+hist(bydaynona$steps,
+        breaks=bins,
+        col="lightblue",
+        xlab="Total Steps Taken Each Day",
+        ylab="Count of Days",
+        ylim=c(0, 20),
+        main="Histogram of Subject's Steps per Day from Oct. 1- Nov. 30, 2012\n(with NAs Replaced by Interval Mean)")
+```
+
+Calculate the mean and median number of steps per day, using the dataset with NAs replaced by means for that interval:
+```{r}
+colMeans(subset(bydaynona,select=c(steps)))
+median(bydaynona$steps)
+```
+
+Note that the mean number of steps does not change, but the median changed slightly.
+
+Create a new factor variable in the dataset with two levels - "Weekday" and "Weekend" 
+indicating whether a given date is a weekday or weekend day.  Then aggregate by day type and interval and calculate mean of steps per interval for weekends and weekdays:
+```{r}
+newdata$date<-as.POSIXct(as.character(newdata$date))
+newdata$weekday<-weekdays(newdata$date)
+newdata$daytype <- ifelse(newdata$weekday == "Saturday" |newdata$weekday == "Sunday",
+                        c("Weekend"), c("Weekday")) 
+intdaymean<-aggregate(x=newdata[,1],by=list(newdata$daytype,newdata$interval),FUN="mean")
+colnames(intdaymean)<-c("daytype","interval","mean_steps")
+```
+Plot the mean steps per 5-minute interval across all days, faceted by day type:
+```{r}
+ggplot(intdaymean, aes(x=interval, y=mean_steps)) +
+        facet_wrap(~daytype, ncol=1)+
+        geom_line() + 
+        theme_bw()+
+        ggtitle("Mean Steps per 5-Minute Interval Across All Days")+
+        ylab(expression("Mean Steps"))+
+        xlab(expression("5-Minute Interval"))
+```
